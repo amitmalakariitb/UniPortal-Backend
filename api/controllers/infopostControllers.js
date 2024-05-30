@@ -3,9 +3,13 @@ const dotenv = require("dotenv");
 dotenv.config();
 const infopostModel = require("../models/infopostModel");
 const imageModel = require("../models/imageModel");
+const userModel = require("../models/userModel");
+const notificationController = require("../controllers/notificationController");
 const path = require("path");
+
 // multer middleware for handling uploading images
 const multer = require("multer");
+const ROLES_LIST = require("../../config/roles_list");
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, "../html/uploads");
@@ -49,13 +53,18 @@ const postinfopost = asyncHandler(async (req, res) => {
         url: req.body.urls,
         images: savedImages,
       });
+      const savedInfopost = await infopost.save();
+      // Notify all students about the new infopost
+      const allStudents = await userModel.find({ role: ROLES_LIST.STUDENT });
+      const studentIds = allStudents.map(student => student._id);
+      await notificationController.createNotification(1, studentIds, savedInfopost._id, "New infopost");
+
+
       const message = "Infopost posted successfully";
-      await infopost.save().then((data) => {
-        res.json({data,message});
-      });
+      res.json({ data: savedInfopost, message });
     });
   } catch (err) {
-    res.status(400).res.json({ message: " An error occured while posting the infopost" });
+    res.status(400).json({ message: "An error occurred while posting the infopost" });
   }
 });
 
