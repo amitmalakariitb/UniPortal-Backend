@@ -47,6 +47,9 @@ app.use(
 //for future versions
 //app.use(prefix + "/search", require("./api/routes/elasticRouters"));
 
+//WebSocket Server
+require('./webSocket/websocketServer')
+
 //listening to port 5000 by default
 app.listen(port, () =>
   console.log(

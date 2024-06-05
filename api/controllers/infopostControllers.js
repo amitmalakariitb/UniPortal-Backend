@@ -1,5 +1,6 @@
 const asyncHandler = require("express-async-handler");
 const dotenv = require("dotenv");
+const axios=require('axios');
 dotenv.config();
 const infopostModel = require("../models/infopostModel");
 const imageModel = require("../models/imageModel");
@@ -44,10 +45,15 @@ const postinfopost = asyncHandler(async (req, res) => {
           savedImages.push(image.filename);
         }
       }
+      //defining tag for the question
+      const query=req.body.body;
+      const tag_response=await axios.post('http://localhost:5001/tag',{query});
+      const classified_tag=tag_response.data;
       const infopost = new infopostModel({
         body: req.body.body,
         url: req.body.urls,
         images: savedImages,
+        tag:classified_tag
       });
       const message = "Infopost posted successfully";
       await infopost.save().then((data) => {
