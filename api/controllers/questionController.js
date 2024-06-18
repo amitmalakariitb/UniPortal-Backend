@@ -314,8 +314,8 @@ const answerQ = asyncHandler(async (req, res) => {
 
       const body = req.body["answers"];
       console.log("body", body);
-      // const um = await userModel.findOne({ user_ID: body.user_ID });
-      const um = await userModel.findOne({ user_ID: req.body.user_ID });
+      const um = await userModel.findOne({ user_ID: body.user_ID });
+      // const um = await userModel.findOne({ user_ID: req.body.user_ID });
       if(!um){
         res.status(401).json({error:"User not found"})
       }
