@@ -42,6 +42,8 @@ const upload = multer({
 const questionModel = require("../models/questionModel");
 const userModel = require("../models/userModel");
 const imageModel = require("../models/imageModel");
+//import the controllers
+const notificationController = require("../controllers/notificationController");
 
 //-------------------------------------------------------------------------------------------------------------------------------------
 
@@ -302,9 +304,9 @@ const answerQ = asyncHandler(async (req, res) => {
 
       const body = req.body["answers"];
       console.log("body", body);
-      const um = await userModel.findOne({ user_ID: body.user_ID });
-      if(!um){
-        res.status(401).json({error:"User not found"})
+      const um = await userModel.findOne({ user_ID: req.body.user_ID });
+      if (!um) {
+        return res.status(401).json({ error: "User not found" });
       }
       console.log("user model", um);
       let verified = false;
@@ -312,33 +314,46 @@ const answerQ = asyncHandler(async (req, res) => {
         verified = true;
       }
       const message = "Successfully answered the question";
+      // Update the question with the provided answer
       await questionModel
-        .updateOne(
-          { _id: req.params.qid }, // this line is to find the question with the id
+        .findByIdAndUpdate(
+          req.params.qid,
           {
             $push: {
-              answers: [
-                {
-                  body: body.body,
-                  user_ID: body.user_ID,
-                  user_Name: um.name,
-                  images: savedImages,
-                  verified: verified,
-                },
-              ],
+              answers: {
+                body: req.body.body,
+                user_ID: req.body.user_ID,
+                user_Name: um.name,
+                images: savedImages,
+                verified: verified,
+              },
             },
             $set: { status: true },
-          }
+          },
+          { new: true } // To return the updated document
         )
-        .then((data) => {
-          res.json({data,message});
+        .then(async (updatedQuestion) => {
+          // To check if the question was found and updated
+          if (!updatedQuestion) {
+            return res.status(404).json({ error: "Question not found" });
+          }
+          // Notify the student that their question has been answered
+          const studentId = updatedQuestion.user_ID;
+          const answererId = req.body.user_ID;
+          const notifMessage = "Your question has been answered";
+          notificationController.createNotification(
+            answererId,
+            [studentId],
+            req.params.qid,
+            notifMessage
+          );
+          res.json({ data: updatedQuestion, message });
         });
     });
   } catch (err) {
-    res.status(400).json({ message: "Error occured while answering the question" });
+    res.status(400).json({ message: "Error occurred while answering the question" });
   }
 });
-
 //Commenting
 //Commenting on a question
 //no point of keeping track of comments
@@ -347,42 +362,46 @@ const commentQ = asyncHandler(async (req, res) => {
   try {
     const cID = new mongoose.Types.ObjectId();
     const body = req.body["comments"];
-    const um = await userModel.findOne({ user_ID: body.user_ID });
-    if(!um){
-      res.status(401).json({error:"User not found"})
+    const um = await userModel.findOne({ user_ID: req.body.user_ID });
+    if (!um) {
+      return res.status(401).json({ error: "User not found" });
     }
     console.log("user model", um);
     const message = "Successfully commented on the question";
-    await questionModel
-      .updateOne(
-        { _id: req.params.qid },
-        {
-          $push: {
-            comments: [
-              {
-                _id: cID,
-                body: body.body,
-                user_ID: body.user_ID,
-                user_Name: um.name,
-              },
-            ],
+    // Update the question document by pushing the new comment
+    await questionModel.findByIdAndUpdate(
+      req.params.qid,
+      {
+        $push: {
+          comments: {
+            _id: cID,
+            body: req.body.body,
+            user_ID: req.body.user_ID,
+            user_Name: um ? um.name : 'Unknown', // Handle case where user is not found
           },
-        }
-      )
-      .then(async (data) => {
-        console.log(cID.valueOf());
-        //inserting posted comment id to user model
-
-        const temp = um.question_comments.concat([
-          { questionID: req.params.qid, commentID: cID.valueOf() },
-        ]);
-        um.question_comments = temp;
-        await um.save();
-        res.json({data,message});
-      });
+        },
+      },
+    );
+    //Notify the student that someone commented on their question
+    const studentid = (await questionModel.findById(req.params.qid)).user_ID; 
+    const senderid = req.body.user_ID;
+    const notifMessage = "Your question has been commented on";
+    notificationController.createNotification(
+      senderid,
+      [studentid],
+      req.params.qid,
+      notifMessage
+    );
+    // Insert the posted comment ID to user model
+    const temp = um.question_comments.concat([
+      { questionID: req.params.qid, commentID: cID.valueOf() },
+    ]);
+    um.question_comments = temp;
+    await um.save();
+    res.json({ message });
   } catch (err) {
     console.log(err);
-    res.status(400).res.json({ message: "Error occured while commenting on the question" });
+    res.status(400).json({ message: "Error occurred while commenting on the question" });
   }
 });
 
