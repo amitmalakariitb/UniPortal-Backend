@@ -1,5 +1,6 @@
 /* eslint-disable no-unused-vars */
 /* eslint-disable no-undef */
+const axios= require('axios');
 const dotenv = require("dotenv");
 dotenv.config();
 const asyncHandler = require("express-async-handler"); // the function of async handler here is to handle errors in async functions. https://www.npmjs.com/package/express-async-handler
@@ -90,6 +91,10 @@ const postQuestion = asyncHandler(async (req, res) => {
       }
       console.log("user found", um);
       const message = "Question posted successfully";
+      //defining tag for the question
+      const query=body.body;
+      const tag_response=await axios.post('http://localhost:5001/tag',{query});
+      const classified_tag=tag_response.data;
       //creating question
       await questionModel
         .create({
@@ -98,6 +103,7 @@ const postQuestion = asyncHandler(async (req, res) => {
           body: body.body,
           images: savedImages,
           _id: qID,
+          tag:classified_tag
           //reason I didn't initialise comment or answer is because it used to create a default answer and comment
         })
         .then(async (data) => {
@@ -111,8 +117,14 @@ const postQuestion = asyncHandler(async (req, res) => {
           um.asked_questions = temp;
           await um.save();
 
+          //creating tfidf embeddings
+          axios.get('http://localhost:5001/embed').then(
+            console.log('created embeddings')
+        )
+
           res.json({data,message});
         });
+      
     });
   } catch (err) {
     res.status(400).json({ message: "Error occured while posting the question" });
@@ -304,9 +316,13 @@ const answerQ = asyncHandler(async (req, res) => {
 
       const body = req.body["answers"];
       console.log("body", body);
+
+//       const um = await userModel.findOne({ user_ID: body.user_ID });
+
       const um = await userModel.findOne({ user_ID: req.body.user_ID });
       if (!um) {
         return res.status(401).json({ error: "User not found" });
+
       }
       console.log("user model", um);
       let verified = false;
@@ -362,9 +378,13 @@ const commentQ = asyncHandler(async (req, res) => {
   try {
     const cID = new mongoose.Types.ObjectId();
     const body = req.body["comments"];
+    
+//     const um = await userModel.findOne({ user_ID: body.user_ID });
+    
     const um = await userModel.findOne({ user_ID: req.body.user_ID });
     if (!um) {
       return res.status(401).json({ error: "User not found" });
+
     }
     console.log("user model", um);
     const message = "Successfully commented on the question";
