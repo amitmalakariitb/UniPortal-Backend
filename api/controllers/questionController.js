@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-vars */
 /* eslint-disable no-undef */
-const axios= require('axios');
+const axios = require('axios');
 const dotenv = require("dotenv");
 dotenv.config();
 const asyncHandler = require("express-async-handler"); // the function of async handler here is to handle errors in async functions. https://www.npmjs.com/package/express-async-handler
@@ -44,7 +44,7 @@ const questionModel = require("../models/questionModel");
 const userModel = require("../models/userModel");
 const imageModel = require("../models/imageModel");
 //import the controllers
-const notificationController = require("../controllers/notificationController");
+const { createNotification } = require("../controllers/notificationController");
 
 //-------------------------------------------------------------------------------------------------------------------------------------
 
@@ -80,21 +80,21 @@ const postQuestion = asyncHandler(async (req, res) => {
       const body = req.body;
       console.log("body :", body);
       //if no text send error
-      if(!body.body){
+      if (!body.body) {
         return res.status(400).json({ message: "Please Enter Text" });
       }
       //finding user
       const um = await userModel.findOne({ user_ID: body.user_ID });
       //not working in postman if no userid is sent
-      if(!um){
+      if (!um) {
         return res.status(404).json({ message: "User Not Found" });
       }
       console.log("user found", um);
       const message = "Question posted successfully";
       //defining tag for the question
-      const query=body.body;
-      const tag_response=await axios.post('http://localhost:5001/tag',{query});
-      const classified_tag=tag_response.data;
+      const query = body.body;
+      // const tag_response = await axios.post('http://localhost:5001/tag', { query });
+      // const classified_tag = tag_response.data;
       //creating question
       await questionModel
         .create({
@@ -103,7 +103,7 @@ const postQuestion = asyncHandler(async (req, res) => {
           body: body.body,
           images: savedImages,
           _id: qID,
-          tag:classified_tag
+          // tag: classified_tag
           //reason I didn't initialise comment or answer is because it used to create a default answer and comment
         })
         .then(async (data) => {
@@ -120,11 +120,11 @@ const postQuestion = asyncHandler(async (req, res) => {
           //creating tfidf embeddings
           axios.get('http://localhost:5001/embed').then(
             console.log('created embeddings')
-        )
+          )
 
-          res.json({data,message});
+          res.json({ data, message });
         });
-      
+
     });
   } catch (err) {
     res.status(400).json({ message: "Error occured while posting the question" });
@@ -172,51 +172,51 @@ const allQuestions = asyncHandler(async (_req, res) => {
       });
       res.json(data);
     })
-    .catch((err) =>   res.status(400).json({ message: "Error occured while fetching all questions" }));
+    .catch((err) => res.status(400).json({ message: "Error occured while fetching all questions" }));
 });
 
 //gets all my asked questions
 const MyQuestions = asyncHandler(async (req, res) => {
-  try{
-  await questionModel
-    .find({ user_ID: req.body.user_ID })
-    .sort({ upvotes: -1, asked_At: -1 })
-    .then((data) => {
-      //not sending hidden comments
-      let temp = [];
-      data.forEach((elm) => {
-        temp = [];
-        elm.comments.forEach((em) => {
-          if (em.hidden === false) {
-            console.log(em);
-            temp.push(em);
-          }
-        });
-        elm.comments = temp;
-      });
-      //not sending hidden answers and hidden comments within answers
-      data.forEach((elm) => {
-        temp = [];
-        elm.answers.forEach((em) => {
-          let temp1 = [];
-          em.comments.forEach((emm) => {
-            if (emm.hidden == false) temp1.push(emm);
+  try {
+    await questionModel
+      .find({ user_ID: req.body.user_ID })
+      .sort({ upvotes: -1, asked_At: -1 })
+      .then((data) => {
+        //not sending hidden comments
+        let temp = [];
+        data.forEach((elm) => {
+          temp = [];
+          elm.comments.forEach((em) => {
+            if (em.hidden === false) {
+              console.log(em);
+              temp.push(em);
+            }
           });
-          em.comments = temp1;
-          if (em.hidden === false) {
-            console.log(em);
-            temp.push(em);
-          }
+          elm.comments = temp;
         });
-        elm.answers = temp;
-      });
+        //not sending hidden answers and hidden comments within answers
+        data.forEach((elm) => {
+          temp = [];
+          elm.answers.forEach((em) => {
+            let temp1 = [];
+            em.comments.forEach((emm) => {
+              if (emm.hidden == false) temp1.push(emm);
+            });
+            em.comments = temp1;
+            if (em.hidden === false) {
+              console.log(em);
+              temp.push(em);
+            }
+          });
+          elm.answers = temp;
+        });
 
-      res.json(data);
-    })
+        res.json(data);
+      })
   }
-    catch(err){
-      res.status(400).json({ message: "Error occured while getting my questions" });
-    }
+  catch (err) {
+    res.status(400).json({ message: "Error occured while getting my questions" });
+  }
 });
 
 //gets all not my questions
@@ -317,7 +317,7 @@ const answerQ = asyncHandler(async (req, res) => {
       const body = req.body["answers"];
       console.log("body", body);
 
-//       const um = await userModel.findOne({ user_ID: body.user_ID });
+      //       const um = await userModel.findOne({ user_ID: body.user_ID });
 
       const um = await userModel.findOne({ user_ID: req.body.user_ID });
       if (!um) {
@@ -357,7 +357,7 @@ const answerQ = asyncHandler(async (req, res) => {
           const studentId = updatedQuestion.user_ID;
           const answererId = req.body.user_ID;
           const notifMessage = "Your question has been answered";
-          notificationController.createNotification(
+          createNotification(
             answererId,
             [studentId],
             req.params.qid,
@@ -378,9 +378,9 @@ const commentQ = asyncHandler(async (req, res) => {
   try {
     const cID = new mongoose.Types.ObjectId();
     const body = req.body["comments"];
-    
-//     const um = await userModel.findOne({ user_ID: body.user_ID });
-    
+
+    //     const um = await userModel.findOne({ user_ID: body.user_ID });
+
     const um = await userModel.findOne({ user_ID: req.body.user_ID });
     if (!um) {
       return res.status(401).json({ error: "User not found" });
@@ -403,10 +403,10 @@ const commentQ = asyncHandler(async (req, res) => {
       },
     );
     //Notify the student that someone commented on their question
-    const studentid = (await questionModel.findById(req.params.qid)).user_ID; 
+    const studentid = (await questionModel.findById(req.params.qid)).user_ID;
     const senderid = req.body.user_ID;
     const notifMessage = "Your question has been commented on";
-    notificationController.createNotification(
+    createNotification(
       senderid,
       [studentid],
       req.params.qid,
@@ -435,12 +435,12 @@ const commentA = asyncHandler(async (req, res) => {
       .where("user_ID")
       .equals(body.user_ID)
       .exec();
-      if(!um){
-        res.status(404).json({ message: "User not found" });
-      }
-      if(!body.body){
-        res.status(404).json({ message: "Please Enter Text" });
-      }
+    if (!um) {
+      res.status(404).json({ message: "User not found" });
+    }
+    if (!body.body) {
+      res.status(404).json({ message: "Please Enter Text" });
+    }
     const message = "Successfully commented on the answer";
     await questionModel
       .updateOne(
@@ -477,7 +477,7 @@ const commentA = asyncHandler(async (req, res) => {
         ]);
         um.answer_comments = temp;
         await um.save();
-        res.json({data,message});
+        res.json({ data, message });
       });
   } catch (err) {
     res.status(400).json({ message: "Error" });
@@ -492,8 +492,8 @@ const upvoteQ = asyncHandler(async (req, res) => {
     .where("user_ID")
     .equals(req.body.user_ID)
     .exec();
-  if(!um){
-      res.status(404).json({ message: "User not found" });
+  if (!um) {
+    res.status(404).json({ message: "User not found" });
   }
   //ensure each user can upvote only once
   let upvote_val = 1;
@@ -522,8 +522,8 @@ const upvoteQ = asyncHandler(async (req, res) => {
       }
       um.upvoted_questions = temp;
       await um.save();
-      const message =`${pre}pvoted successfully`;
-      res.json({ val: upvote_val , message});
+      const message = `${pre}pvoted successfully`;
+      res.json({ val: upvote_val, message });
     });
 });
 
@@ -573,8 +573,8 @@ const upvoteA = asyncHandler(async (req, res) => {
       }
       um.upvoted_answers = temp;
       await um.save();
-      const message =`${pre}pvoted successfully`;
-      res.json({ val: upvote_val,message });
+      const message = `${pre}pvoted successfully`;
+      res.json({ val: upvote_val, message });
     })
     .catch((err) => res.status(400).json({ message: "Error occured while upvoting the answer" }));
 });
@@ -594,8 +594,8 @@ const hideQ = asyncHandler(async (req, res) => {
 
   await questionModel
     .updateOne({ _id: req.params.qid }, { $set: { hidden: updatedHidden } })
-    .then((data) => res.json({message:`The question is ${pre}hidden now`}))//changed this line from sending update to message
-    .catch((err) =>res.status(400).json({ message: "Error occured while hiding the question" }));
+    .then((data) => res.json({ message: `The question is ${pre}hidden now` }))//changed this line from sending update to message
+    .catch((err) => res.status(400).json({ message: "Error occured while hiding the question" }));
 });
 
 //best to delete them than hide
@@ -637,7 +637,7 @@ const hideA = asyncHandler(async (req, res) => {
     )
     .then(() => {
       console.log("hid answer");
-      res.json({message:`The answer is ${pre}hidden now`});//changed this line from sending update to message
+      res.json({ message: `The answer is ${pre}hidden now` });//changed this line from sending update to message
     })
     .catch((err) => res.status(400).json({ message: "Error" }));
 });
@@ -678,7 +678,7 @@ const hideC = asyncHandler(async (req, res) => {
     )
     .then(() => {
       console.log("hid comment");
-      res.json({message: `The comment is ${pre}hidden now`});//changed this line from sending update to message
+      res.json({ message: `The comment is ${pre}hidden now` });//changed this line from sending update to message
     })
     .catch((err) => res.status(400).json({ message: "Error occured while hiding the comment" }));
 });
@@ -727,7 +727,7 @@ const hideAC = asyncHandler(async (req, res) => {
     )
     .then((data) => {
       console.log("hid comment");
-      res.json({data,message});
+      res.json({ data, message });
     })
     .catch((err) => res.status(404).json({ message: "Error occured while hiding the comment" }));
 });

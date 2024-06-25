@@ -40,7 +40,7 @@ const QuestionSchema = mongoose.Schema({
   answers: [AnswerSchema],
   comments: [commentSchema],
   verified: { type: Boolean, default: false },
-  tag: { type: String, required: true }
+  tag: { type: String, required: false }
 });
 
 //create model of the schema

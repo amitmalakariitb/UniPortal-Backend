@@ -1,11 +1,11 @@
 const asyncHandler = require("express-async-handler");
 const dotenv = require("dotenv");
-const axios=require('axios');
+const axios = require('axios');
 dotenv.config();
 const infopostModel = require("../models/infopostModel");
 const imageModel = require("../models/imageModel");
 const userModel = require("../models/userModel");
-const notificationController = require("../controllers/notificationController");
+const { createNotification } = require("../controllers/notificationController");
 const path = require("path");
 
 // multer middleware for handling uploading images
@@ -50,20 +50,21 @@ const postinfopost = asyncHandler(async (req, res) => {
         }
       }
       //defining tag for the question
-      const query=req.body.body;
-      const tag_response=await axios.post('http://localhost:5001/tag',{query});
-      const classified_tag=tag_response.data;
+      const query = req.body.body;
+      // const tag_response = await axios.post('http://localhost:5001/tag', { query });
+      // const classified_tag = tag_response.data;
       const infopost = new infopostModel({
         body: req.body.body,
         url: req.body.urls,
         images: savedImages,
-        tag:classified_tag
+        // tag: classified_tag
       });
       const savedInfopost = await infopost.save();
       // Notify all students about the new infopost
       const allStudents = await userModel.find({ role: ROLES_LIST.STUDENT });
-      const studentIds = allStudents.map(student => student._id);
-      await notificationController.createNotification(1, studentIds, savedInfopost._id, "New infopost");
+      const studentIds = allStudents.map(student => student.user_ID);
+      createNotification(1, studentIds, savedInfopost._id, req.body.body);
+
 
 
       const message = "Infopost posted successfully";
@@ -113,7 +114,7 @@ const hideinfopost = asyncHandler(async (req, res) => {
     const message = `The infopost is ${pre}hidden now`;
     await infopostModel
       .updateOne({ _id: req.params.id }, { $set: { hidden: updatedHidden } })
-      .then((data) => res.json({data,message}));
+      .then((data) => res.json({ data, message }));
   } catch (err) {
     res.status(404).res.json({ message: "Error occured while hiding  the infopost" });
   }
@@ -134,7 +135,7 @@ const editinfopost = asyncHandler(async (req, res) => {
     const message = "Successfully edited the infopost";
     await infopostModel
       .updateOne({ _id: req.params.id }, { $set: { body: body } })
-      .then((data) => res.json({data,message}));
+      .then((data) => res.json({ data, message }));
   } catch (err) {
     res.status(400).res.json({ message: "An error occured while editing the infopost" });
   }

@@ -8,28 +8,28 @@ const ROLES_LIST = require("../../config/roles_list");
 
 //Function for creating notifications
 const createNotification = asyncHandler(async (senderid, recipientlist, contentid, content) => {
-    try {
-        const newNotification = new notificationModel({
-            senderid: senderid,
-            recipientlist: recipientlist,
-            contentid: contentid,
-            content: content
-        });
-        await newNotification.save();
-        console.log("Notification created:", newNotification);
+  try {
+    const newNotification = new notificationModel({
+      senderid: senderid,
+      recipientlist: recipientlist,
+      contentid: contentid,
+      content: content
+    });
+    await newNotification.save();
+    console.log("Notification created:", newNotification);
 
-  
-        return newNotification;
-    } catch (err) {
-        throw new Error("An error occurred while creating notification"+err.message);
-    }
-  });
+
+    return newNotification;
+  } catch (err) {
+    throw new Error("An error occurred while creating notification" + err.message);
+  }
+});
 
 
 // Function to get all notifications of a particular student
 const getNotificationsByStudent = async (req, res) => {
   try {
-    const studentId = req.params.studentId;
+    const studentId = req.body.user_ID;
 
     const notifications = await notificationModel.find({ recipientlist: studentId });
 
