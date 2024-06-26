@@ -78,6 +78,7 @@ const postQuestion = asyncHandler(async (req, res) => {
       //save the images to the question model
 
       const body = req.body;
+      const is_Anonymous = body.is_Anonymous
       console.log("body :", body);
       //if no text send error
       if (!body.body) {
@@ -103,8 +104,9 @@ const postQuestion = asyncHandler(async (req, res) => {
           body: body.body,
           images: savedImages,
           _id: qID,
-          // tag: classified_tag
+          // tag: classified_tag,
           //reason I didn't initialise comment or answer is because it used to create a default answer and comment
+          is_Anonymous: is_Anonymous,
         })
         .then(async (data) => {
           //automatic indexing of  question whenever it is posted

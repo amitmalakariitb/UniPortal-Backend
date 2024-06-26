@@ -6,7 +6,7 @@ const { getNotificationsByStudent } = require('../controllers/notificationContro
 
 // Route to get all notifications of a particular student
 router
-    .route("/get")
+    .route("/get/:studentId")
     .get(verifyRoles(ROLES_LIST.STUDENT, ROLES_LIST.SMP, ROLES_LIST.Admin), getNotificationsByStudent);
 
 module.exports = router;

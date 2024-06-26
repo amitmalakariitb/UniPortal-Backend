@@ -29,7 +29,7 @@ const createNotification = asyncHandler(async (senderid, recipientlist, contenti
 // Function to get all notifications of a particular student
 const getNotificationsByStudent = async (req, res) => {
   try {
-    const studentId = req.body.user_ID;
+    const studentId = req.params.studentId;
 
     const notifications = await notificationModel.find({ recipientlist: studentId });
 
