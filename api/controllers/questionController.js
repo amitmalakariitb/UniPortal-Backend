@@ -363,7 +363,8 @@ const answerQ = asyncHandler(async (req, res) => {
             answererId,
             [studentId],
             req.params.qid,
-            notifMessage
+            notifMessage,
+            true
           );
           res.json({ data: updatedQuestion, message });
         });
@@ -412,7 +413,8 @@ const commentQ = asyncHandler(async (req, res) => {
       senderid,
       [studentid],
       req.params.qid,
-      notifMessage
+      notifMessage,
+      true
     );
     // Insert the posted comment ID to user model
     const temp = um.question_comments.concat([
