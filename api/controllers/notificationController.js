@@ -7,13 +7,14 @@ const path = require("path");
 const ROLES_LIST = require("../../config/roles_list");
 
 //Function for creating notifications
-const createNotification = asyncHandler(async (senderid, recipientlist, contentid, content) => {
+const createNotification = asyncHandler(async (senderid, recipientlist, contentid, content, isquestion) => {
   try {
     const newNotification = new notificationModel({
       senderid: senderid,
       recipientlist: recipientlist,
       contentid: contentid,
-      content: content
+      content: content,
+      isquestion: isquestion
     });
     await newNotification.save();
     console.log("Notification created:", newNotification);

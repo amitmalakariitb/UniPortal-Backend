@@ -63,7 +63,7 @@ const postinfopost = asyncHandler(async (req, res) => {
       // Notify all students about the new infopost
       const allStudents = await userModel.find({ role: ROLES_LIST.STUDENT });
       const studentIds = allStudents.map(student => student.user_ID);
-      createNotification(1, studentIds, savedInfopost._id, req.body.body);
+      createNotification(1, studentIds, savedInfopost._id, req.body.body, false);
 
 
 
