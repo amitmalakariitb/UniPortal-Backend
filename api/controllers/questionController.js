@@ -319,9 +319,9 @@ const answerQ = asyncHandler(async (req, res) => {
       const body = req.body["answers"];
       console.log("body", body);
 
-      //       const um = await userModel.findOne({ user_ID: body.user_ID });
+      const um = await userModel.findOne({ user_ID: body.user_ID });
 
-      const um = await userModel.findOne({ user_ID: req.body.user_ID });
+      // const um = await userModel.findOne({ user_ID: req.body.user_ID });
       if (!um) {
         return res.status(401).json({ error: "User not found" });
 
@@ -339,8 +339,8 @@ const answerQ = asyncHandler(async (req, res) => {
           {
             $push: {
               answers: {
-                body: req.body.body,
-                user_ID: req.body.user_ID,
+                body: body.body,
+                user_ID: body.user_ID,
                 user_Name: um.name,
                 images: savedImages,
                 verified: verified,
@@ -357,7 +357,7 @@ const answerQ = asyncHandler(async (req, res) => {
           }
           // Notify the student that their question has been answered
           const studentId = updatedQuestion.user_ID;
-          const answererId = req.body.user_ID;
+          const answererId = body.user_ID;
           const notifMessage = "Your question has been answered";
           createNotification(
             answererId,
@@ -382,9 +382,10 @@ const commentQ = asyncHandler(async (req, res) => {
     const cID = new mongoose.Types.ObjectId();
     const body = req.body["comments"];
 
-    //     const um = await userModel.findOne({ user_ID: body.user_ID });
+    const um = await userModel.findOne({ user_ID: body.user_ID });
 
-    const um = await userModel.findOne({ user_ID: req.body.user_ID });
+    // const um = await userModel.findOne({ user_ID: req.body.user_ID });
+
     if (!um) {
       return res.status(401).json({ error: "User not found" });
 
@@ -398,8 +399,8 @@ const commentQ = asyncHandler(async (req, res) => {
         $push: {
           comments: {
             _id: cID,
-            body: req.body.body,
-            user_ID: req.body.user_ID,
+            body: body.body,
+            user_ID: body.user_ID,
             user_Name: um ? um.name : 'Unknown', // Handle case where user is not found
           },
         },
@@ -407,7 +408,7 @@ const commentQ = asyncHandler(async (req, res) => {
     );
     //Notify the student that someone commented on their question
     const studentid = (await questionModel.findById(req.params.qid)).user_ID;
-    const senderid = req.body.user_ID;
+    const senderid = um.user_ID;
     const notifMessage = "Your question has been commented on";
     createNotification(
       senderid,
