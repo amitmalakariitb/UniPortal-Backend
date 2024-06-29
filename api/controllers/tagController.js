@@ -11,19 +11,17 @@ const getContent = asyncHandler(async (req, res) => {
       return res.status(400).json({ message: "Type and tag are required" });
     }
   
-    let model;
-    if (type === 'question') {
-      model = questionModel;
-    } else if (type === 'infopost') {
-      model = infopostModel; 
-    } else {
-      return res.status(400).json({ message: "Invalid type:  Must be 'question' or 'infopost'" });
-    }
-  
     try {
-      const content = await model.find({ tag: tag, hidden: false }).sort({ createdAt: -1 });
-      res.json(content);
+      if (type==="question"){
+        const content = await questionModel.find({ tag: tag, hidden: false }).sort({ upvotes: -1 });
+        res.json(content);
+    }
+      else if (type==="infopost"){
+        const content = await infopostModel.find({ tag: tag, hidden: false }).sort({ asked_At: -1 });
+        res.json(content);
+      }
     } catch (err) {
+      console.log(err)
       res.status(500).json({ message: "Error occurred while fetching content" });
     }
   });
