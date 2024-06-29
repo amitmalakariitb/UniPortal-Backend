@@ -32,6 +32,7 @@ app.use(prefix + "/uploads", express.static("./uploads"));
 //All routing goes here
 app.use(prefix + "/user", require("./api/routes/userRouters"));
 app.use(prefix+ "/notification", require("./api/routes/notificationRouters"));
+app.use(prefix+ "/taggedQ", require("./api/routes/tagRouters"));
 
 
 // app.use(authenticateToken);
